@@ -5,10 +5,13 @@ import ReactMarkdown from "react-markdown";
 
 const ChatContainer = () => {
   const [msg, setMsg] = useState("");
-  const [chatRes, setChatRes] = useState([]);
   const [chatHistory, setChatHistory] = useState([]);
-  const API_KEY = "AIzaSyDFQ8TFo7E2ytpTkYI-g1IuACe2yRLtq-I";
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [tokensUsed, setTokensUsed] = useState(null);
+  const API_KEY = import.meta.env.VITE_API_KEY;
 
+  console.log(tokensUsed);
   const getGeminiData = async () => {
     if (!msg.trim()) {
       return;
@@ -31,6 +34,8 @@ const ChatContainer = () => {
     };
 
     try {
+      setLoading(true);
+      setError(null);
       let response = await axios.post(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${API_KEY}`,
         requestBody,
@@ -41,8 +46,8 @@ const ChatContainer = () => {
         }
       );
       let data = response.data;
+      setTokensUsed(response.data?.usageMetadata?.totalTokenCount);
       let chatData = data.candidates[0].content.parts[0].text;
-      setChatRes(chatData);
       setChatHistory([
         ...chatHistory,
         [
@@ -50,13 +55,15 @@ const ChatContainer = () => {
           { role: "ai", message: chatData },
         ],
       ]);
+      setLoading(false);
       setMsg("");
     } catch (error) {
       console.log(error);
+      setLoading(false);
+      setError(error.message);
     }
   };
 
-  console.log(chatHistory);
   return (
     <Box
       sx={{
@@ -93,12 +100,19 @@ const ChatContainer = () => {
                   padding: 2,
                   backgroundColor: "#e0f7fa",
                   borderRadius: "8px",
+                  display: "flex",
+                  justifyContent: "flex-start",
+                  alignItems: "center",
                 }}
               >
-                <Typography variant="body1" fontWeight="bold">
+                <Typography
+                  variant="body1"
+                  fontWeight="bold"
+                  sx={{ marginRight: "5px" }}
+                >
                   User:
                 </Typography>
-                <Typography variant="body2">{chat[0].message}</Typography>
+                <Typography variant="body1">{chat[0].message}</Typography>
               </Paper>
 
               <Paper
@@ -134,9 +148,11 @@ const ChatContainer = () => {
           onChange={(e) => setMsg(e.target.value)}
         />
         <Button variant="contained" color="primary" onClick={getGeminiData}>
-          Send
+          {loading ? "Loading..." : "Send"}
         </Button>
       </Box>
+      {error && <Typography color="error">{error}</Typography>}
+      {tokensUsed && `tokens used for current promt : ${tokensUsed || 0}`}
     </Box>
   );
 };
