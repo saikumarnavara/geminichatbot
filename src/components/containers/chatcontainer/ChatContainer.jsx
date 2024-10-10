@@ -9,7 +9,7 @@ const ChatContainer = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [tokensUsed, setTokensUsed] = useState(null);
-  const API_KEY = import.meta.env.VITE_API_KEY;
+  const API_KEY = import.meta.env.VITE_GEMINI_API;
 
   console.log(tokensUsed);
   const getGeminiData = async () => {
